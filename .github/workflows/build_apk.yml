@@ -1,0 +1,52 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Capacitor CLI
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Initialize Capacitor App
+        run: |
+          npx cap init "GiamCan70kg" "com.dung.giamcan70kg" --web-dir www
+
+      - name: Prepare Web Assets
+        run: |
+          mkdir -p www
+          cp index.html www/index.html
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK via Gradle
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: App-Giam-Can-70kg.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
